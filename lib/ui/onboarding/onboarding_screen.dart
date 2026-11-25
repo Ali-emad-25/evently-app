@@ -1,6 +1,4 @@
-import 'package:evently_app/firebase_utils.dart';
 import 'package:evently_app/models/onboarding_model.dart';
-import 'package:evently_app/providers/user_provider.dart';
 import 'package:evently_app/ui/onboarding/widgets/back_btn.dart';
 import 'package:evently_app/ui/onboarding/widgets/logo_widget.dart';
 import 'package:evently_app/ui/onboarding/widgets/main_btn.dart';
@@ -8,12 +6,8 @@ import 'package:evently_app/ui/onboarding/widgets/onboarding_page.dart';
 import 'package:evently_app/ui/onboarding/widgets/text_btn.dart';
 import 'package:evently_app/utils/app_assets.dart';
 import 'package:evently_app/utils/app_routes.dart';
-import 'package:evently_app/utils/dialog_utils.dart';
 import 'package:evently_app/utils/size_utils.dart';
-import 'package:evently_app/utils/toast_utils.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -115,40 +109,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   : 'next',
               onPressed: () async {
                 if (currentPage == pagesList.length - 1) {
-                  if (FirebaseAuth.instance.currentUser != null) {
-                    DialogUtils.showLoading(
-                      context: context,
-                      text: 'loading...',
-                    );
-
-                    final firebaseUser = FirebaseAuth.instance.currentUser!;
-
-                    final myUser = await FirebaseUtils.getUserInFirestore(
-                      firebaseUser.uid,
-                    );
-
-                    if (myUser != null) {
-                      Provider.of<UserProvider>(
-                        context,
-                        listen: false,
-                      ).userUpdate(myUser);
-
-                      DialogUtils.hideLoading(context: context);
-                      ToastUtils.showToast(
-                        text: 'login_successfully',
-                        backgroundColor: Theme.of(context).primaryColor,
-                      );
-                      Navigator.pushReplacementNamed(
-                        context,
-                        AppRoutes.homeRouteName,
-                      );
-                    }
-                  } else {
-                    Navigator.pushReplacementNamed(
-                      context,
-                      AppRoutes.loginRouteName,
-                    );
-                  }
+                  Navigator.pushReplacementNamed(
+                    context,
+                    AppRoutes.loginRouteName,
+                  );
                 } else {
                   controller.nextPage(
                     duration: Duration(milliseconds: 300),
