@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:evently_app/firebase_options.dart';
+import 'package:evently_app/firebase_utils.dart';
 import 'package:evently_app/providers/theme_provider.dart';
 import 'package:evently_app/providers/user_provider.dart';
 import 'package:evently_app/ui/home/add_screen/add_screen.dart';
@@ -13,16 +14,40 @@ import 'package:evently_app/ui/onboarding/onboarding_screen.dart';
 import 'package:evently_app/ui/onboarding/start_screen.dart';
 import 'package:evently_app/utils/app_routes.dart';
 import 'package:evently_app/utils/app_theme.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   await EasyLocalization.ensureInitialized();
+
   final themeProvider = ThemeProvider();
   await themeProvider.loadTheme();
+
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  final userProvider = UserProvider();
+
+  String initialRoute = AppRoutes.startRouteName;
+
+  final firebaseUser = FirebaseAuth.instance.currentUser;
+
+  if (firebaseUser != null) {
+    try {
+      final myUser = await FirebaseUtils.getUserInFirestore(firebaseUser.uid);
+
+      if (myUser != null) {
+        userProvider.userUpdate(myUser);
+        initialRoute = AppRoutes.homeRouteName;
+      }
+    } catch (e) {
+      debugPrint('Error loading user: $e');
+    }
+  }
+
   runApp(
     EasyLocalization(
       supportedLocales: [Locale('en'), Locale('ar')],
@@ -31,20 +56,23 @@ void main() async {
       child: MultiProvider(
         providers: [
           ChangeNotifierProvider.value(value: themeProvider),
-          ChangeNotifierProvider(create: (context) => UserProvider()),
+          ChangeNotifierProvider.value(value: userProvider),
         ],
-        child: MyApp(),
+        child: MyApp(initialRoute: initialRoute),
       ),
     ),
   );
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final String initialRoute;
+
+  const MyApp({super.key, required this.initialRoute});
 
   @override
   Widget build(BuildContext context) {
     var themeProvider = Provider.of<ThemeProvider>(context);
+
     return MaterialApp(
       localizationsDelegates: context.localizationDelegates,
       supportedLocales: context.supportedLocales,
@@ -53,7 +81,7 @@ class MyApp extends StatelessWidget {
       theme: AppTheme.lightMode,
       darkTheme: AppTheme.darkMode,
       themeMode: themeProvider.themeMode,
-      initialRoute: AppRoutes.startRouteName,
+      initialRoute: initialRoute,
       routes: {
         AppRoutes.startRouteName: (context) => StartScreen(),
         AppRoutes.onboardingRouteName: (context) => OnboardingScreen(),
